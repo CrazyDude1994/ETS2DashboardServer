@@ -1,13 +1,6 @@
 import socket
 import struct
-from DriverController import *
-
-
-def handle_command(command, control_id, button_state, control_position):
-    if COMMANDS[command] == "BUTTON_PRESS":
-        joystick.set_button_pressed(control_id, button_state)
-    elif COMMANDS[command] == "SLIDER_MOVE":
-        joystick.set_slider_position(control_id, control_position)
+from CommandHandler import CommandHandler
 
 HOST = ''
 PORT = 8844
@@ -15,9 +8,8 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
 
-joystick = Joystick(1)
-
-COMMANDS = ("BUTTON_PRESS", "SLIDER_MOVE")
+handler = CommandHandler()
+handler.start()
 
 while 1:
     conn, addr = s.accept()
@@ -30,6 +22,6 @@ while 1:
         if not data:
             break
         command, control_id, button_state, control_position = struct.unpack("!BiBi", data)
-        handle_command(command, control_id, button_state, control_position)
+        handler.add_command(command, control_id, button_state, control_position)
         print(command, control_id, button_state, control_position)
     conn.close()
