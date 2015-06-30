@@ -1,4 +1,4 @@
-from DriverInterface import *
+from driver_interface import *
 
 HID_USAGE_X = 0x30
 HID_USAGE_Y = 0x31
@@ -11,11 +11,12 @@ HID_USAGE_SL1 = 0x37
 HID_USAGE_WHL = 0x38
 HID_USAGE_POV = 0x39
 
+
 class VJoyException(Exception):
     pass
 
-class Joystick:
 
+class Joystick:
     def __init__(self, id):
         self._id = id
         code = VJoy.AcquireVJD(id)

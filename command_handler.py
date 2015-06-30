@@ -1,13 +1,13 @@
 from threading import Thread
-from DriverController import *
+from driver_controller import *
 from time import sleep
 
 COMMANDS = ("BUTTON_PRESS", "SLIDER_MOVE")
 
 joystick = Joystick(1)
 
-class Command:
 
+class Command:
     def __init__(self, command, control_id, button_state, control_position):
         self.command = command
         self.control_id = control_id
@@ -16,7 +16,6 @@ class Command:
 
 
 class CommandHandler(Thread):
-
     commands = []
 
     def add_command(self, command, control_id, button_state, control_position):
@@ -30,4 +29,4 @@ class CommandHandler(Thread):
                     joystick.set_button_pressed(command.control_id, command.button_state)
                 elif COMMANDS[command.command] == "SLIDER_MOVE":
                     joystick.set_slider_position(command.control_id, command.control_position)
-            sleep(0.02)
+            sleep(0.02)  # waiting for 20 miliseconds to be sure that input was registered by vJoy
