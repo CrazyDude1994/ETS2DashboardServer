@@ -92,7 +92,6 @@ class ETSData:
         param_list = []
         for fmt in format_list:
             param_list.append(unpack(fmt, data[offset:offset + calcsize(fmt)]))
-            print(offset, offset + calcsize(fmt))
             offset += calcsize(fmt)
 
         engine_enabled = param_list[0][0]
