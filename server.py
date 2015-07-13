@@ -8,7 +8,7 @@ from time import sleep
 from ets_data_mapper import ETSData
 
 HOST = ""
-PORT = 8844
+PORT = 8845
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)

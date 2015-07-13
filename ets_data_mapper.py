@@ -29,6 +29,13 @@ class GearInfo:
         self.gears = gears
         self.gear = gear
 
+class FuelInfo:
+    def __init__(self, fuel=0, fuel_capacity=0, fuel_rate=0, fuel_avg_consumption=0):
+        self.fuel_capacity = fuel_capacity
+        self.fuel_rate = fuel_rate
+        self.fuel_avg_consumption = fuel_avg_consumption
+        self.fuel = fuel
+
 
 class EngineInfo:
     def __init__(self, engine_rpm=0, engine_rpm_max=0):
@@ -38,7 +45,9 @@ class EngineInfo:
 
 class TruckInfo:
     def __init__(self, engine_enabled=False, trailer_attached=False, speed=0.0, acceleration=Vector3(0, 0, 0),
-                 position=Vector3(0, 0, 0), rotation=Vector3(0, 0, 0), gear_info=GearInfo(), engine_info=EngineInfo()):
+                 position=Vector3(0, 0, 0), rotation=Vector3(0, 0, 0), gear_info=GearInfo(), engine_info=EngineInfo(),
+                 fuel_info=FuelInfo()):
+        self.fuel_info = fuel_info
         self.engine_info = engine_info
         self.gear_info = gear_info
         self.acceleration = acceleration
@@ -87,7 +96,7 @@ class ETSData:
         self.plugin = PluginInfo(*params)
 
     def load_truck_info(self, data):
-        format_list = ["??xxf", "fff", "fff", "fff", "iiii", "ff"]
+        format_list = ["??xxf", "fff", "fff", "fff", "iiii", "ff", "ffff"]
         offset = 20
         param_list = []
         for fmt in format_list:
@@ -99,4 +108,5 @@ class ETSData:
         speed = param_list[0][2]
         self.truck = TruckInfo(engine_enabled, trailer_attached, speed, Vector3(*param_list[1]),
                                Vector3(*param_list[2]),
-                               Vector3(*param_list[3]), GearInfo(*param_list[4]), EngineInfo(*param_list[5]))
+                               Vector3(*param_list[3]), GearInfo(*param_list[4]), EngineInfo(*param_list[5]),
+                               FuelInfo(*param_list[6]))
