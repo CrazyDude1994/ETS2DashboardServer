@@ -1,9 +1,9 @@
-from mmap import *
 from struct import unpack, calcsize
 
 
 class GameState:
-    def __init__(self, time=None, paused=False):
+    def __init__(self, time=None, paused=False, time_absolute=0):
+        self.time_absolute = time_absolute
         self.time = time
         self.paused = paused
 
@@ -29,6 +29,7 @@ class GearInfo:
         self.gears = gears
         self.gear = gear
 
+
 class FuelInfo:
     def __init__(self, fuel=0, fuel_capacity=0, fuel_rate=0, fuel_avg_consumption=0):
         self.fuel_capacity = fuel_capacity
@@ -43,10 +44,35 @@ class EngineInfo:
         self.engine_rpm_max = engine_rpm_max
 
 
+class InputInfo:
+    def __init__(self, user_steer=0, user_throttle=0, user_brake=0, user_clutch=0, game_steer=0, game_throttle=0,
+                 game_brake=0, game_clutch=0):
+        self.game_throttle = game_throttle
+        self.game_steer = game_steer
+        self.game_brake = game_brake
+        self.game_clutch = game_clutch
+        self.user_steer = user_steer
+        self.user_throttle = user_throttle
+        self.user_brake = user_brake
+        self.user_clutch = user_clutch
+
+
+class TrailerInfo:
+    def __init__(self, trailer_weight=0, trailer_offset=0, trailer_length=0, trailer_id="", trailer_name=""):
+        self.trailer_id = trailer_id
+        self.trailer_name = trailer_name
+        self.trailer_length = trailer_length
+        self.trailer_offset = trailer_offset
+        self.trailer_weight = trailer_weight
+
+
 class TruckInfo:
     def __init__(self, engine_enabled=False, trailer_attached=False, speed=0.0, acceleration=Vector3(0, 0, 0),
                  position=Vector3(0, 0, 0), rotation=Vector3(0, 0, 0), gear_info=GearInfo(), engine_info=EngineInfo(),
-                 fuel_info=FuelInfo()):
+                 fuel_info=FuelInfo(), truck_weight=0, model_offset=0, model_length=0):
+        self.truck_weight = truck_weight
+        self.model_offset = model_offset
+        self.model_length = model_length
         self.fuel_info = fuel_info
         self.engine_info = engine_info
         self.gear_info = gear_info
@@ -63,6 +89,8 @@ class ETSData:
         self.truck = TruckInfo()
         self.game = GameState()
         self.plugin = PluginInfo()
+        self.trailer = TrailerInfo()
+        self.input = InputInfo()
 
     def load_from_file(self, dump_file):
         """
@@ -96,17 +124,20 @@ class ETSData:
         self.plugin = PluginInfo(*params)
 
     def load_truck_info(self, data):
-        format_list = ["??xxf", "fff", "fff", "fff", "iiii", "ff", "ffff"]
-        offset = 20
+        format_list = ["??xxf", "3f", "3f", "3f", "4i", "2f", "4f", "8f", "2f4i", "2i", "f64p64p"]
+        offset = 20  # truck info byte position offset
         param_list = []
         for fmt in format_list:
             param_list.append(unpack(fmt, data[offset:offset + calcsize(fmt)]))
             offset += calcsize(fmt)
 
-        engine_enabled = param_list[0][0]
-        trailer_attached = param_list[0][1]
-        speed = param_list[0][2]
+        engine_enabled, trailer_attached, speed = param_list[0][:3]
+        truck_weight, model_offset, model_length = param_list[8][0], param_list[8][2], param_list[8][3]
+        trailer_weight, trailer_offset, trailer_length = param_list[8][1], param_list[8][4], param_list[8][5]
+        time_absolute, gears_reverse = param_list[9]
+        self.input = InputInfo(*param_list[7])
+        self.trailer = TrailerInfo(trailer_weight, trailer_offset, trailer_length)
         self.truck = TruckInfo(engine_enabled, trailer_attached, speed, Vector3(*param_list[1]),
                                Vector3(*param_list[2]),
                                Vector3(*param_list[3]), GearInfo(*param_list[4]), EngineInfo(*param_list[5]),
-                               FuelInfo(*param_list[6]))
+                               FuelInfo(*param_list[6]), truck_weight, model_offset, model_length)
