@@ -1,4 +1,12 @@
 from struct import unpack, calcsize
+import json
+
+
+class TruckEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, '__json__'):
+            return obj.__json__()
+        return json.JSONEncoder.default(self, obj)
 
 
 class GameState:
@@ -7,6 +15,9 @@ class GameState:
         self.time = time
         self.paused = paused
 
+    def __json__(self):
+        return vars(self)
+
 
 class PluginInfo:
     def __init__(self, revision=0, major=0, minor=0):
@@ -14,12 +25,18 @@ class PluginInfo:
         self.major = major
         self.minor = minor
 
+    def __json__(self):
+        return vars(self)
+
 
 class Vector3:
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
+
+    def __json__(self):
+        return vars(self)
 
 
 class GearInfo:
@@ -29,6 +46,9 @@ class GearInfo:
         self.gears = gears
         self.gear = gear
 
+    def __json__(self):
+        return vars(self)
+
 
 class FuelInfo:
     def __init__(self, fuel=0, fuel_capacity=0, fuel_rate=0, fuel_avg_consumption=0):
@@ -37,11 +57,17 @@ class FuelInfo:
         self.fuel_avg_consumption = fuel_avg_consumption
         self.fuel = fuel
 
+    def __json__(self):
+        return vars(self)
+
 
 class EngineInfo:
     def __init__(self, engine_rpm=0, engine_rpm_max=0):
         self.engine_rpm = engine_rpm
         self.engine_rpm_max = engine_rpm_max
+
+    def __json__(self):
+        return vars(self)
 
 
 class InputInfo:
@@ -56,14 +82,20 @@ class InputInfo:
         self.user_brake = user_brake
         self.user_clutch = user_clutch
 
+    def __json__(self):
+        return vars(self)
+
 
 class TrailerInfo:
     def __init__(self, trailer_weight=0, trailer_offset=0, trailer_length=0, trailer_id="", trailer_name=""):
-        self.trailer_id = trailer_id
-        self.trailer_name = trailer_name
+        self.trailer_id = trailer_id.strip("\0")
+        self.trailer_name = trailer_name.strip("\0")
         self.trailer_length = trailer_length
         self.trailer_offset = trailer_offset
         self.trailer_weight = trailer_weight
+
+    def __json__(self):
+        return vars(self)
 
 
 class TruckInfo:
@@ -82,6 +114,9 @@ class TruckInfo:
         self.rotation = rotation
         self.trailer_attached = trailer_attached
         self.engine_enabled = engine_enabled
+
+    def __json__(self):
+        return vars(self)
 
 
 class ETSData:
@@ -124,7 +159,7 @@ class ETSData:
         self.plugin = PluginInfo(*params)
 
     def load_truck_info(self, data):
-        format_list = ["??xxf", "3f", "3f", "3f", "4i", "2f", "4f", "8f", "2f4i", "2i", "f64p64p"]
+        format_list = ["??xxf", "3f", "3f", "3f", "4i", "2f", "4f", "8f", "2f4i", "2i", "f64s64s"]
         offset = 20  # truck info byte position offset
         param_list = []
         for fmt in format_list:
@@ -135,9 +170,13 @@ class ETSData:
         truck_weight, model_offset, model_length = param_list[8][0], param_list[8][2], param_list[8][3]
         trailer_weight, trailer_offset, trailer_length = param_list[8][1], param_list[8][4], param_list[8][5]
         time_absolute, gears_reverse = param_list[9]
+        trailer_mass, trailer_id, trailer_name = param_list[10]
         self.input = InputInfo(*param_list[7])
-        self.trailer = TrailerInfo(trailer_weight, trailer_offset, trailer_length)
+        self.trailer = TrailerInfo(trailer_weight, trailer_offset, trailer_length, trailer_id, trailer_name)
         self.truck = TruckInfo(engine_enabled, trailer_attached, speed, Vector3(*param_list[1]),
                                Vector3(*param_list[2]),
                                Vector3(*param_list[3]), GearInfo(*param_list[4]), EngineInfo(*param_list[5]),
                                FuelInfo(*param_list[6]), truck_weight, model_offset, model_length)
+
+    def __json__(self):
+        return vars(self)

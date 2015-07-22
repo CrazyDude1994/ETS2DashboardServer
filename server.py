@@ -1,11 +1,11 @@
-import random
 import socket
 import struct
 from mmap import *
 from threading import Thread
-from command_handler import CommandHandler
+#from command_handler import CommandHandler
 from time import sleep
-from ets_data_mapper import ETSData
+from ets_data_mapper import ETSData, TruckEncoder
+from json import dumps, loads
 
 HOST = ""
 PORT = 8845
@@ -13,8 +13,8 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
 
-handler = CommandHandler()
-handler.start()
+#handler = CommandHandler()
+#handler.start()
 
 
 class ReceiveThread(Thread):
@@ -35,7 +35,7 @@ class ReceiveThread(Thread):
             if not data:
                 break
             command, control_id, button_state, control_position = struct.unpack("!BiBi", data)
-            handler.add_command(command, control_id, button_state, control_position)
+            #handler.add_command(command, control_id, button_state, control_position)
 
 
 class SendThread(Thread):
@@ -50,12 +50,11 @@ class SendThread(Thread):
             try:
                 map_file.seek(0)
                 data.load_from_mmap(map_file)
-                self.connection.send(
-                    struct.pack("!2?f2i2f", data.truck.engine_enabled, data.truck.trailer_attached, data.truck.speed,
-                                data.truck.gear_info.gear, data.truck.gear_info.gears,
-                                data.truck.engine_info.engine_rpm, data.truck.engine_info.engine_rpm_max))
-            except:
-                print("Failed to send. Client probably disconnected")
+                json_data = dumps(data, cls=TruckEncoder)
+                self.connection.send(struct.pack("!i", len(json_data)))
+                self.connection.send(json_data)
+            except Exception as e:
+                print("Failed to send. Client probably disconnected.[{0}]".format(e.message))
                 break
             sleep(0.02)
 
